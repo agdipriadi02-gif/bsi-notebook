@@ -10,16 +10,19 @@ nixPkgs = [
     "php83Extensions.fileinfo",
     "php83Extensions.openssl",
     "php83Extensions.zip",
-    "composer"
+    "composer",
+    "nodejs"
 ]
 
 [phases.install]
 cmds = [
-    "composer install --no-dev --optimize-autoloader"
+    "composer install --no-dev --optimize-autoloader",
+    "npm install"
 ]
 
 [phases.build]
 cmds = [
+    "npm run build",
     "php artisan config:clear",
     "php artisan route:clear",
     "php artisan view:clear",
