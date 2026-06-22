@@ -8,6 +8,12 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('css/library-light.css?v=3') }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard-light.css') }}">
+    <style>
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
 <div class="dash-layout">
@@ -184,8 +190,26 @@
                     </div>
                 </div>
 
-                <div class="summary-card" id="summary-card" style="display: none;">
-                    {!! Str::markdown($activeMaterial->summary ?? "Belum ada ringkasan yang digenerate untuk materi ini.") !!}
+                <!-- Source PDF Panel -->
+                <div id="summary-card" style="display:none; margin-top:16px; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08); border:1px solid #e2e8f0; animation: slideInUp 0.3s ease;">
+                    <!-- Panel Header -->
+                    <div style="background:linear-gradient(135deg,#2e7d32,#4caf50); padding:16px 20px; display:flex; align-items:center; justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.3rem;">📄</span>
+                            <div>
+                                <div style="color:#fff;font-weight:700;font-size:0.95rem;">Sumber dari PDF</div>
+                                <div style="color:rgba(255,255,255,0.75);font-size:0.78rem;" id="source-location">Memuat lokasi...</div>
+                            </div>
+                        </div>
+                        <button onclick="document.getElementById('summary-card').style.display='none'" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+                    </div>
+                    <!-- Panel Body -->
+                    <div style="background:#fff; padding:20px;">
+                        <div style="background:#f0fdf4; border-left:4px solid #4caf50; border-radius:0 8px 8px 0; padding:16px 18px; margin-bottom:0;">
+                            <div style="font-size:0.78rem;font-weight:600;color:#2e7d32;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📌 Kutipan Teks</div>
+                            <p id="source-content" style="font-size:0.92rem;line-height:1.75;color:#1a1a2e;margin:0;"></p>
+                        </div>
+                    </div>
                 </div>
             @else
                 <!-- Empty State -->
@@ -315,9 +339,8 @@ function appendMessage(role, content, id = null, hasSource = false, sourceText =
     let html = content;
     
     if (hasSource) {
-        // Encode sourceText safely for onclick
         const encodedSource = encodeURIComponent(sourceText);
-        html += `<br><br><a href="#" class="chat-action-btn" onclick="showSource('${encodedSource}'); return false;">📄 Lihat Sumber</a>`;
+        html += `<br><br><a href="#" class="chat-action-btn" style="display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;color:#2e7d32;border:1px solid #bbf7d0;padding:5px 12px;border-radius:999px;font-size:0.78rem;font-weight:600;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'" onclick="showSource('${encodedSource}'); return false;">📄 Lihat Sumber</a>`;
     }
 
     html += `<div class="chat-light-time">Baru saja</div>`;
@@ -327,12 +350,18 @@ function appendMessage(role, content, id = null, hasSource = false, sourceText =
 
 function showSource(encodedText) {
     const card = document.getElementById('summary-card');
-    const text = decodeURIComponent(encodedText).replace(/\n/g, '<br>');
-    card.innerHTML = `<h3 style="margin-top:0; color:#2e7d32; font-size:1.1rem; margin-bottom:16px;">📄 Sumber dari PDF</h3><p style="font-size:0.95rem; line-height:1.6; color:#333;">${text}</p>`;
+    const fullText = decodeURIComponent(encodedText);
+
+    // Parse lokasi (baris pertama) dan isi kutipan
+    const lines = fullText.split('\n');
+    const location = lines[0] || 'Dokumen PDF';
+    const content = lines.slice(1).join(' ').trim() || fullText;
+
+    document.getElementById('source-location').textContent = location;
+    document.getElementById('source-content').textContent = content;
+
     card.style.display = 'block';
-    
-    // Scroll to the card smoothly
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 </script>
 </body>

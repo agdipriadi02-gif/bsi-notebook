@@ -239,7 +239,13 @@ class QuizController extends Controller
             'time_limit_minutes' => 15,
         ]);
 
-        $questions = $this->generateSampleQuestions($topic, $questionCount);
+        // Coba generate soal dari AI
+        $questions = $this->generateQuestionsFromAI($material, $questionCount);
+        
+        // Fallback jika AI gagal atau materi kosong
+        if (empty($questions)) {
+            $questions = $this->generateSampleQuestions($topic, $questionCount);
+        }
 
         foreach ($questions as $index => $q) {
             QuizQuestion::create([
@@ -260,6 +266,76 @@ class QuizController extends Controller
         ]);
 
         return redirect()->route('quiz.show', ['quiz' => $quiz->id, 'attempt' => $attempt->id]);
+    }
+
+    private function generateQuestionsFromAI(Material $material, int $count): array
+    {
+        $apiKey = env('GEMINI_API_KEY');
+        if (!$apiKey || empty(trim($material->content_text ?? ''))) {
+            return [];
+        }
+
+        $prompt = "Tugas Anda adalah membuat {$count} soal pilihan ganda berdasarkan teks dokumen di bawah ini.
+Setiap soal harus memiliki 4 pilihan jawaban (A, B, C, D) dan satu penjelasan mengapa jawaban tersebut benar berdasarkan teks.
+
+PENTING: Anda WAJIB mengembalikan respon HANYA dalam format JSON ARRAY murni yang valid seperti struktur di bawah ini. JANGAN tambahkan teks pengantar apapun (seperti ```json).
+
+Struktur JSON yang diharapkan:
+[
+  {
+    \"question\": \"Pertanyaan...\",
+    \"context\": \"Konteks tambahan jika perlu (bisa kosong)...\",
+    \"options\": {
+      \"A\": \"Pilihan A\",
+      \"B\": \"Pilihan B\",
+      \"C\": \"Pilihan C\",
+      \"D\": \"Pilihan D\"
+    },
+    \"correct_answer\": \"A\",
+    \"explanation\": \"Penjelasan mengapa A benar...\"
+  }
+]
+
+TEKS DOKUMEN:
+" . \Illuminate\Support\Str::limit($material->content_text, 50000); // Batasi agar tidak terlalu berat
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(60)->withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
+                'contents' => [
+                    [
+                        'role' => 'user',
+                        'parts' => [
+                            ['text' => $prompt]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.4,
+                ]
+            ]);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                $aiText = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                
+                // Bersihkan respon AI dari tag markdown ```json jika terbawa
+                $aiText = preg_replace('/```json\s*/', '', $aiText);
+                $aiText = preg_replace('/```\s*/', '', $aiText);
+                $aiText = trim($aiText);
+
+                $decoded = json_decode($aiText, true);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+        } catch (\Exception $e) {
+            // Biarkan jatuh ke return [] di bawah
+        }
+
+        return [];
     }
 
     public function show(Quiz $quiz, Request $request)
