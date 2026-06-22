@@ -100,7 +100,8 @@ DOKUMEN MATERI:
         try {
             $response = Http::timeout(30)->withHeaders([
                 'Content-Type' => 'application/json',
-            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}", [
+                'X-goog-api-key' => $apiKey,
+            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", [
                 'contents' => [
                     [
                         'role' => 'user',
