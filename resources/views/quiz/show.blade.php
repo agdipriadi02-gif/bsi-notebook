@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $quiz->title }} – BSI Note Book</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/library-light.css?v=3') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/library-light.css') }}?v={{ time() }}">
     <style>
         .quiz-light-content { flex: 1; overflow-y: auto; background: #f8f9fa; padding: 32px 48px; position: relative; scroll-behavior: smooth; }
         .quiz-header-bar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 24px; border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 32px; }

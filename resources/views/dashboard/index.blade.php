@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notebook Baru – BSI Note Book</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/library-light.css?v=3') }}">
-    <link rel="stylesheet" href="{{ asset('css/dashboard-light.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/library-light.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/dashboard-light.css') }}?v={{ time() }}">
     <style>
         @keyframes slideInUp {
             from { opacity: 0; transform: translateY(16px); }
