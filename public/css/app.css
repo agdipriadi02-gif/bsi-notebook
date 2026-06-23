@@ -2322,12 +2322,29 @@ input, textarea, select { font-family: inherit; }
    RESPONSIVE
    ============================================================ */
 
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .auth-left { display: none; }
-  .auth-right { width: 100%; }
+  .auth-right { width: 100%; padding: 40px 20px; }
   .dashboard-body { grid-template-columns: 1fr; }
   .material-sidebar, .chat-sidebar { display: none; }
   .features-grid { grid-template-columns: 1fr; }
   .hero-title { font-size: 2rem; }
   .quiz-content { padding: 16px; }
+  
+  /* Landing page adjustments */
+  .nav-links { display: none; }
+  .mockup-body { grid-template-columns: 1fr; height: auto; }
+  .mockup-sidebar, .mockup-chat { display: none; }
+  .cta-section { margin: 0 0 50px; border-radius: 0; padding: 40px 20px; }
+  .pdf-float { display: none; }
+  .navbar { padding: 0 20px; }
+  .hero-section { padding-top: 100px; padding-bottom: 40px; }
+  .hero-actions { flex-direction: column; width: 100%; }
+  .btn-primary-hero, .btn-secondary-hero { width: 100%; justify-content: center; }
+  
+  /* App Layout (Quiz etc) */
+  .app-layout { flex-direction: column; height: auto; min-height: 100vh; overflow: auto; }
+  .app-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--dark-border); max-height: auto; }
+  .app-header { padding: 16px; height: auto; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .header-brand-group { width: 100%; justify-content: space-between; }
 }

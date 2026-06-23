@@ -99,3 +99,27 @@
 .chat-light-send { width: 36px; height: 36px; background: #1a202c; color: #fff; border-radius: 16px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: 0.2s; }
 .chat-light-send:hover { background: #2d3748; }
 .chat-powered { text-align: center; font-size: 0.65rem; color: #a0aec0; letter-spacing: 0.5px; font-weight: 600; text-transform: uppercase; }
+
+/* ============================================================
+   RESPONSIVE LAYOUT
+   ============================================================ */
+@media (max-width: 992px) {
+    .dash-layout { flex-direction: column; height: auto; min-height: 100vh; overflow: auto; }
+    .dash-header { padding: 0 16px; height: auto; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; }
+    .dash-header-left { width: 100%; justify-content: space-between; margin-bottom: 10px; }
+    .dash-header-center { display: none; }
+    .dash-header-right { width: 100%; justify-content: flex-start; }
+    
+    .dash-body { flex-direction: column; overflow: visible; }
+    
+    .dash-sidebar-left { width: 100%; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); max-height: none; padding: 20px 16px; }
+    
+    .dash-center { padding: 20px 16px; overflow: visible; }
+    .top-actions { flex-direction: column; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+    
+    .dash-sidebar-right { width: 100%; border-left: none; border-top: 1px solid rgba(0,0,0,0.06); max-height: none; min-height: 500px; }
+    
+    .summary-card { padding: 20px; }
+    .summary-card h1 { font-size: 1.6rem; }
+    .expansion-grid { grid-template-columns: 1fr; }
+}

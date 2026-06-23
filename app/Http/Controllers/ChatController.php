@@ -97,78 +97,91 @@ DOKUMEN MATERI:
 " . $material->content_text;
 
         // Panggil Gemini API
-        try {
-            $response = Http::timeout(30)->withHeaders([
-                'Content-Type' => 'application/json',
-                'X-goog-api-key' => $apiKey,
-            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", [
-                'contents' => [
-                    [
-                        'role' => 'user',
-                        'parts' => [
-                            ['text' => $systemPrompt . "\n\nPERTANYAAN USER:\n" . $question]
+        $models = explode(',', env('GEMINI_MODELS', 'gemini-1.5-flash,gemini-1.5-pro,gemini-1.0-pro'));
+        $lastError = '';
+
+        foreach ($models as $model) {
+            $model = trim($model);
+            if (empty($model)) continue;
+
+            try {
+                $response = Http::timeout(30)->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'X-goog-api-key' => $apiKey,
+                ])->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent", [
+                    'contents' => [
+                        [
+                            'role' => 'user',
+                            'parts' => [
+                                ['text' => $systemPrompt . "\n\nPERTANYAAN USER:\n" . $question]
+                            ]
                         ]
+                    ],
+                    'generationConfig' => [
+                        'temperature' => 0.2, // Rendah agar lebih faktual sesuai PDF
                     ]
-                ],
-                'generationConfig' => [
-                    'temperature' => 0.2, // Rendah agar lebih faktual sesuai PDF
-                ]
-            ]);
+                ]);
 
-            if ($response->successful()) {
-                $result = $response->json();
-                $aiText = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
-                
-                // Pisahkan jawaban dan kutipan
-                $parts = explode('[KUTIPAN]', $aiText);
-                $mainAnswer = trim($parts[0]);
-                $quote = isset($parts[1]) ? trim($parts[1]) : '';
+                if ($response->successful()) {
+                    $result = $response->json();
+                    $aiText = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                    
+                    // Pisahkan jawaban dan kutipan
+                    $parts = explode('[KUTIPAN]', $aiText);
+                    $mainAnswer = trim($parts[0]);
+                    $quote = isset($parts[1]) ? trim($parts[1]) : '';
 
-                if (empty($quote)) {
+                    if (empty($quote)) {
+                        return [
+                            'content'     => $mainAnswer,
+                            'has_source'  => false,
+                            'source_text' => '',
+                        ];
+                    }
+
+                    // Coba cari lokasi kutipan di PDF
+                    $location = 'Dari dokumen PDF';
+                    if (preg_match('/\[Halaman (\d+)\]/', $quote, $match)) {
+                        $location = "Halaman " . $match[1];
+                        $quote = preg_replace('/\[Halaman \d+\]\s*/', '', $quote);
+                    } else {
+                        // Cari di teks asli untuk menemukan halamannya
+                        preg_match_all('/\[Halaman (\d+)\]\n(.*?)(?=\[Halaman \d+\]|$)/s', $material->content_text, $pages);
+                        for ($i = 0; $i < count($pages[1]); $i++) {
+                            // Cari sebagian kata dari kutipan
+                            $snippet = substr($quote, 0, 50);
+                            if (str_contains(strtolower($pages[2][$i]), strtolower($snippet))) {
+                                $location = "Halaman " . $pages[1][$i];
+                                break;
+                            }
+                        }
+                    }
+
                     return [
                         'content'     => $mainAnswer,
-                        'has_source'  => false,
-                        'source_text' => '',
+                        'has_source'  => true,
+                        'source_text' => $location . "\n" . trim(str_replace(['"', '*'], '', $quote)),
                     ];
                 }
 
-                // Coba cari lokasi kutipan di PDF
-                $location = 'Dari dokumen PDF';
-                if (preg_match('/\[Halaman (\d+)\]/', $quote, $match)) {
-                    $location = "Halaman " . $match[1];
-                    $quote = preg_replace('/\[Halaman \d+\]\s*/', '', $quote);
-                } else {
-                    // Cari di teks asli untuk menemukan halamannya
-                    preg_match_all('/\[Halaman (\d+)\]\n(.*?)(?=\[Halaman \d+\]|$)/s', $material->content_text, $pages);
-                    for ($i = 0; $i < count($pages[1]); $i++) {
-                        // Cari sebagian kata dari kutipan
-                        $snippet = substr($quote, 0, 50);
-                        if (str_contains(strtolower($pages[2][$i]), strtolower($snippet))) {
-                            $location = "Halaman " . $pages[1][$i];
-                            break;
-                        }
-                    }
+                $lastStatus = $response->status();
+                $lastError = 'Error: ' . $lastStatus;
+                
+                // Jika error bukan karena rate limit (429) atau server error (500/503), hentikan pencarian.
+                if (!in_array($lastStatus, [429, 500, 503])) {
+                    break;
                 }
 
-                return [
-                    'content'     => $mainAnswer,
-                    'has_source'  => true,
-                    'source_text' => $location . "\n" . trim(str_replace(['"', '*'], '', $quote)),
-                ];
+            } catch (\Exception $e) {
+                $lastError = 'Koneksi gagal: ' . $e->getMessage();
+                continue;
             }
-
-            return [
-                'content'     => 'Terjadi kesalahan saat menghubungi server AI (Error: ' . $response->status() . '). Mungkin API Key tidak valid.',
-                'has_source'  => false,
-                'source_text' => '',
-            ];
-
-        } catch (\Exception $e) {
-            return [
-                'content'     => 'Koneksi ke AI gagal: ' . $e->getMessage(),
-                'has_source'  => false,
-                'source_text' => '',
-            ];
         }
+
+        return [
+            'content'     => 'Terjadi kesalahan saat menghubungi server AI. ' . $lastError . '. Semua model yang tersedia telah dicoba.',
+            'has_source'  => false,
+            'source_text' => '',
+        ];
     }
 }

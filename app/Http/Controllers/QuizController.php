@@ -299,41 +299,54 @@ Struktur JSON yang diharapkan:
 TEKS DOKUMEN:
 " . \Illuminate\Support\Str::limit($material->content_text, 50000); // Batasi agar tidak terlalu berat
 
-        try {
-            $response = \Illuminate\Support\Facades\Http::timeout(60)->withHeaders([
-                'Content-Type' => 'application/json',
-                'X-goog-api-key' => $apiKey,
-            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent", [
-                'contents' => [
-                    [
-                        'role' => 'user',
-                        'parts' => [
-                            ['text' => $prompt]
+        $models = explode(',', env('GEMINI_MODELS', 'gemini-1.5-flash,gemini-1.5-pro,gemini-1.0-pro'));
+
+        foreach ($models as $model) {
+            $model = trim($model);
+            if (empty($model)) continue;
+
+            try {
+                $response = \Illuminate\Support\Facades\Http::timeout(60)->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'X-goog-api-key' => $apiKey,
+                ])->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent", [
+                    'contents' => [
+                        [
+                            'role' => 'user',
+                            'parts' => [
+                                ['text' => $prompt]
+                            ]
                         ]
+                    ],
+                    'generationConfig' => [
+                        'temperature' => 0.4,
                     ]
-                ],
-                'generationConfig' => [
-                    'temperature' => 0.4,
-                ]
-            ]);
+                ]);
 
-            if ($response->successful()) {
-                $result = $response->json();
-                $aiText = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
-                
-                // Bersihkan respon AI dari tag markdown ```json jika terbawa
-                $aiText = preg_replace('/```json\s*/', '', $aiText);
-                $aiText = preg_replace('/```\s*/', '', $aiText);
-                $aiText = trim($aiText);
+                if ($response->successful()) {
+                    $result = $response->json();
+                    $aiText = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                    
+                    // Bersihkan respon AI dari tag markdown ```json jika terbawa
+                    $aiText = preg_replace('/```json\s*/', '', $aiText);
+                    $aiText = preg_replace('/```\s*/', '', $aiText);
+                    $aiText = trim($aiText);
 
-                $decoded = json_decode($aiText, true);
+                    $decoded = json_decode($aiText, true);
 
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    return $decoded;
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        return $decoded;
+                    }
                 }
+                
+                $status = $response->status();
+                if (!in_array($status, [429, 500, 503])) {
+                    break;
+                }
+            } catch (\Exception $e) {
+                // Lanjut ke model berikutnya jika gagal
+                continue;
             }
-        } catch (\Exception $e) {
-            // Biarkan jatuh ke return [] di bawah
         }
 
         return [];

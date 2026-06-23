@@ -81,3 +81,23 @@
 .light-footer-links a { color: inherit; text-decoration: none; transition: 0.2s; }
 .light-footer-links a:hover { color: #1a1a2e; }
 .light-footer-copy { font-size: 0.8rem; color: #888; margin-top: 12px; }
+
+/* ============================================================
+   RESPONSIVE LAYOUT
+   ============================================================ */
+@media (max-width: 992px) {
+    .light-layout { flex-direction: column; height: auto; min-height: 100vh; overflow: auto; }
+    
+    .light-sidebar { width: 100%; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); max-height: none; padding-bottom: 20px; }
+    
+    .light-header { flex-direction: column; height: auto; padding: 20px 16px; gap: 16px; align-items: flex-start; }
+    .light-header-title { width: 100%; }
+    .light-search-container { max-width: 100%; width: 100%; }
+    .light-header-actions { width: 100%; justify-content: flex-start; }
+    
+    .light-content-inner { padding: 20px 16px; }
+    
+    .new-library-grid { grid-template-columns: 1fr; }
+    
+    .filter-bar { flex-direction: column; align-items: flex-start; }
+}
