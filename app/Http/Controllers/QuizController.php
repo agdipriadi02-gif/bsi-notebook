@@ -299,7 +299,7 @@ Struktur JSON yang diharapkan:
 TEKS DOKUMEN:
 " . \Illuminate\Support\Str::limit($material->content_text, 50000); // Batasi agar tidak terlalu berat
 
-        $models = explode(',', env('GEMINI_MODELS', 'gemini-1.5-flash,gemini-1.5-pro,gemini-1.0-pro'));
+        $models = explode(',', env('GEMINI_MODELS', 'gemini-3.5-flash,gemini-2.5-flash,gemini-2.5-pro'));
 
         foreach ($models as $model) {
             $model = trim($model);

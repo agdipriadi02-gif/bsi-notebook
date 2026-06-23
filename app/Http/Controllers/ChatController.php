@@ -97,7 +97,7 @@ DOKUMEN MATERI:
 " . $material->content_text;
 
         // Panggil Gemini API
-        $models = explode(',', env('GEMINI_MODELS', 'gemini-1.5-flash,gemini-1.5-pro,gemini-1.0-pro'));
+        $models = explode(',', env('GEMINI_MODELS', 'gemini-3.5-flash,gemini-2.5-flash,gemini-2.5-pro'));
         $lastError = '';
 
         foreach ($models as $model) {
@@ -176,10 +176,14 @@ DOKUMEN MATERI:
                 $lastError = 'Koneksi gagal: ' . $e->getMessage();
                 continue;
             }
+        $triedModels = implode(', ', $models);
+        $errorMessage = "Terjadi kesalahan saat menghubungi server AI. $lastError. Model yang dicoba: [$triedModels].";
+        if ($lastStatus === 429) {
+            $errorMessage = 'Maaf, server AI sedang sibuk (terlalu banyak permintaan). Silakan coba lagi dalam beberapa detik.';
         }
 
         return [
-            'content'     => 'Terjadi kesalahan saat menghubungi server AI. ' . $lastError . '. Semua model yang tersedia telah dicoba.',
+            'content'     => $errorMessage,
             'has_source'  => false,
             'source_text' => '',
         ];
