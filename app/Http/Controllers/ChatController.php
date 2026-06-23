@@ -176,6 +176,7 @@ DOKUMEN MATERI:
                 $lastError = 'Koneksi gagal: ' . $e->getMessage();
                 continue;
             }
+        }
         $triedModels = implode(', ', $models);
         $errorMessage = "Terjadi kesalahan saat menghubungi server AI. $lastError. Model yang dicoba: [$triedModels].";
         if ($lastStatus === 429) {
